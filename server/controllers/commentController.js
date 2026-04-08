@@ -67,19 +67,29 @@ const updateComment = async (req, res) => {
 };
 
 const deleteComment = async (req, res) => {
-    const userId = req.user._id;
+    const userId = req.user._id; // ID người đang thực hiện lệnh xóa
     const { commentId } = req.params;
 
     try {
+        // 1. Tìm bình luận và thông tin bài viết liên quan
         const comment = await Comment.findById(commentId);
         if (!comment) {
             return res.status(404).json({ message: 'Comment not found' });
         }
 
-        if (comment.userId.toString() !== userId.toString()) {
-            return res.status(403).json({ message: 'You can only delete your own comments' });
+        const post = await Post.findById(comment.postId);
+
+        // 2. Kiểm tra quyền xóa:
+        // Quyền 1: Là người viết bình luận đó (comment.userId)
+        // Quyền 2: Là người sở hữu bài viết chứa bình luận đó (post.userId)
+        const isCommentOwner = comment.userId.toString() === userId.toString();
+        const isPostOwner = post && post.userId.toString() === userId.toString();
+
+        if (!isCommentOwner && !isPostOwner) {
+            return res.status(403).json({ message: 'You do not have permission to delete this comment' });
         }
 
+        // 3. Thực hiện xóa
         await Comment.findByIdAndDelete(commentId);
         res.status(200).json({ message: 'Comment deleted successfully' });
     } catch (error) {

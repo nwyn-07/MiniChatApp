@@ -176,3 +176,69 @@
 .post-click-hint:hover {
     text-decoration: underline;
 }
+/* Giao diện tạo post mới */
+.create-post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.add-image-btn {
+    background: #f0f2f5 !important;
+    color: #45bd62 !important;
+    /* Màu xanh lá kiểu Facebook */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.add-image-btn:hover {
+    background: #e4e6e9 !important;
+}
+
+/* Phần xem trước ảnh trước khi đăng */
+.image-preview-container {
+    position: relative;
+    margin: 10px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 300px;
+}
+
+.img-preview {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.remove-img-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.6) !important;
+    color: white !important;
+    width: 30px;
+    height: 30px;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ảnh trong bài viết ở Feed */
+.post-image-main {
+    margin: 10px -15px;
+    /* Kéo dãn ảnh ra sát lề bài viết */
+    background: #f0f2f5;
+}
+
+.post-image-main img {
+    width: 100%;
+    display: block;
+    max-height: 500px;
+    object-fit: contain;
+}

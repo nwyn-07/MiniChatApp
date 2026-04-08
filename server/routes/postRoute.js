@@ -1,18 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const { checkLogin } = require('../utils/authHandler');
+const { uploadImage } = require('../utils/upload'); // Đảm bảo đường dẫn này đúng với file multer bạn gửi
 const {
     createPost,
-    createPostWithTransaction,
     getPosts,
     getPostById,
     updatePost,
     deletePost,
     getUserPosts,
 } = require('../controllers/postController');
+router.post('/', checkLogin, uploadImage.single('postImage'), createPost);
 
-router.post('/', checkLogin, createPost);
-router.post('/transaction', checkLogin, createPostWithTransaction);
 router.get('/', getPosts);
 router.get('/user/:userId', getUserPosts);
 router.get('/:postId', getPostById);

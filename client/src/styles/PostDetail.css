@@ -1,172 +1,268 @@
-/* Post Detail Modal styles */
-.post-detail-modal {
+/* Phông nền mờ phía sau modal */
+.post-detail-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+}
+
+/* Khung chứa Modal */
+.post-detail-container {
+    background: white;
+    width: 90%;
+    max-width: 950px;
+    height: 80vh;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-body {
+    display: flex;
+    height: 100%;
+}
+
+/* Cột bên trái: Nội dung bài viết */
+.post-main-content {
+    flex: 1.4;
+    padding: 25px;
+    border-right: 1px solid #efefef;
+    display: flex;
+    flex-direction: column;
+}
+
+.post-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.user-avatar-placeholder {
+    width: 45px;
+    height: 45px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    font-weight: bold;
+    font-size: 18px;
 }
 
-.modal-content {
+.post-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #262626;
+}
+
+.post-time {
+    font-size: 12px;
+    color: #8e8e8e;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.post-text p {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #262626;
+    white-space: pre-wrap;
+}
+
+/* Instagram Action Bar */
+.instagram-action-bar {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid #efefef;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.like-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 24px;
+    padding: 0;
+    display: flex;
+    transition: transform 0.1s ease;
+}
+
+.like-btn.liked {
+    color: #ed4956;
+}
+
+.like-btn:hover {
+    transform: scale(1.1);
+}
+
+.like-counter {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Cột bên phải: Comments */
+.post-comments-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+}
+
+.comments-header {
+    padding: 15px;
     background: white;
-    border-radius: 8px;
-    padding: 30px;
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
+    border-bottom: 1px solid #efefef;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.comments-scroller {
+    flex: 1;
     overflow-y: auto;
+    padding: 15px;
+}
+
+.comment-bubble {
+    background: white;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid #efefef;
     position: relative;
 }
 
-.close-btn {
+.comment-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+    color: #8e8e8e;
+}
+
+.comment-bubble p {
+    font-size: 13px;
+    margin: 0;
+    color: #262626;
+}
+
+.delete-comment {
     position: absolute;
-    top: 10px;
-    right: 15px;
+    right: 8px;
+    bottom: 8px;
     background: none;
     border: none;
-    font-size: 28px;
-    cursor: pointer;
-    color: #999;
-}
-
-.close-btn:hover {
-    color: #333;
-}
-
-.post-detail {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #eee;
-}
-
-.post-detail h3 {
-    margin: 0 0 10px 0;
-    color: #333;
-}
-
-.post-detail p {
-    margin: 10px 0;
-    color: #555;
-    line-height: 1.5;
-}
-
-.post-detail small {
-    color: #999;
-}
-
-.reactions {
-    margin: 20px 0;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 4px;
-}
-
-.reaction-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.reaction-btn {
-    background: white;
-    border: 1px solid #ddd;
-    padding: 8px 12px;
-    border-radius: 20px;
+    color: #dbdbdb;
     cursor: pointer;
     font-size: 12px;
-    transition: all 0.3s;
 }
 
-.reaction-btn:hover {
-    background: #f0f0f0;
-    border-color: #007bff;
+.delete-comment:hover {
+    color: #ed4956;
 }
 
-.comments-form {
-    margin: 20px 0;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #eee;
-}
-
-.comments-form form {
+/* Ô nhập bình luận */
+.comment-input-area {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #efefef;
     display: flex;
     gap: 10px;
 }
 
-.comments-form input {
+.comment-input-area input {
     flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid #dbdbdb;
+    border-radius: 20px;
+    padding: 8px 15px;
     font-size: 14px;
 }
 
-.comments-form button {
-    background: #007bff;
-    color: white;
+.comment-input-area button {
+    background: none;
     border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
+    color: #0095f6;
+    font-weight: 600;
     cursor: pointer;
-    font-weight: bold;
 }
 
-.comments-form button:hover {
-    background: #0056b3;
+.comment-input-area button:disabled {
+    opacity: 0.3;
 }
 
-.comments-form button:disabled {
-    background: #ccc;
-    cursor: not-allowed;
+/* Nút đóng */
+.close-modal-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    z-index: 10;
 }
 
-.comments-list {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.comment-item {
-    padding: 12px;
-    background: #f9f9f9;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-
-.comment-header {
+.modal-loader {
+    position: fixed;
+    inset: 0;
+    background: white;
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+}
+.post-detail-image {
+    width: 100%;
+    margin-top: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f0f2f5;
 }
 
-.comment-header strong {
-    color: #333;
+.post-detail-image img {
+    width: 100%;
+    max-height: 400px;
+    /* Giới hạn chiều cao nếu ảnh quá dài */
+    object-fit: contain;
+    /* Giữ nguyên tỷ lệ ảnh */
+    display: block;
+}
+/* Thêm vào PostDetail.css */
+.post-main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.comment-header small {
-    color: #999;
-}
-
-.comment-item p {
-    margin: 8px 0;
-    color: #555;
-    font-size: 14px;
-}
-
-.comment-item .delete-btn {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 5px 10px;
+.post-detail-image {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    background-color: #f8f9fa;
     border-radius: 4px;
-    cursor: pointer;
-    font-size: 11px;
+    margin: 10px 0;
 }
 
-.comment-item .delete-btn:hover {
-    background: #c82333;
+.post-detail-image img {
+    max-width: 100%;
+    max-height: 450px; /* Giới hạn chiều cao để không đẩy thanh like xuống quá xa */
+    object-fit: contain;
 }

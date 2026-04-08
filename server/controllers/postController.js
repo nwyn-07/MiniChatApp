@@ -4,20 +4,32 @@ const Notification = require('../schemas/notificationSchema');
 
 const createPost = async (req, res) => {
     const userId = req.user._id;
-    const { content, images } = req.body;
+    const { content } = req.body;
 
     try {
         if (!content) {
             return res.status(400).json({ message: 'Content is required' });
         }
 
+        let imageUrl = null;
+        // Kiểm tra nếu có file được gửi lên từ Multer (req.file)
+        if (req.file) {
+            // Đường dẫn này sẽ khớp với cấu hình express.static trong server.js của bạn
+            imageUrl = `/uploads/posts/${req.file.filename}`;
+        }
+
         const newPost = new Post({
             userId,
             content,
-            images: images || [],
+            // Nếu có ảnh thì lưu imageUrl, nếu không thì để null hoặc mảng trống tùy Schema của bạn
+            // Ở đây mình giả định bạn lưu 1 ảnh duy nhất cho đơn giản
+            image: imageUrl, 
         });
 
-        const response = await newPost.save();
+        const savedPost = await newPost.save();
+        // Populate để trả về luôn thông tin user, giúp frontend render ngay không cần reload
+        const response = await savedPost.populate('userId', 'username email');
+        
         res.status(201).json(response);
     } catch (error) {
         console.log(error);

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef, previewUrl,Fa } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import PostDetail from '../components/PostDetail';
+import { FaImage, FaTimes } from 'react-icons/fa';
 import '../styles/Feed.css';
 
 const Feed = () => {
@@ -13,7 +14,9 @@ const Feed = () => {
     const [loading, setLoading] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
     const { user } = useContext(AuthContext);
-
+    const fileInputRef = useRef(null);
+    const [selectedImage, setSelectedImage] = useState(null); 
+    const [previewUrl, setPreviewUrl] = useState(null);
     useEffect(() => {
         getAllPosts();
     }, []);
@@ -27,34 +30,60 @@ const Feed = () => {
         }
     };
 
-    const createPost = async (e) => {
-        e.preventDefault();
-        if (!newPostContent.trim()) {
-            alert('Post content cannot be empty');
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post(
-                'http://localhost:5000/api/posts',
-                { content: newPostContent, images: [] },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            setPosts([response.data, ...posts]);
-            setNewPostContent('');
-        } catch (error) {
-            console.log('Error creating post:', error);
-            alert('Failed to create post');
-        } finally {
-            setLoading(false);
+    // Xử lý khi chọn ảnh
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedImage(file);
+            setPreviewUrl(URL.createObjectURL(file)); // Tạo đường dẫn tạm thời để xem trước
         }
     };
+
+    // Xóa ảnh đã chọn trước khi post
+    const removeSelectedImage = () => {
+        setSelectedImage(null);
+        setPreviewUrl(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    useEffect(() => {
+        getAllPosts();
+    }, []);
+
+
+    const createPost = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+        const token = localStorage.getItem('token');
+        
+        // SỬ DỤNG FORMDATA THAY VÌ OBJECT THÔNG THƯỜNG
+        const formData = new FormData();
+        formData.append('content', newPostContent);
+        if (selectedImage) {
+            formData.append('image', selectedImage); // 'image' phải khớp với tên field ở Backend (multer)
+        }
+
+        await axios.post('http://localhost:5000/api/posts', formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data' // Bắt buộc khi có file
+            }
+        });
+
+        // Reset form sau khi đăng thành công
+        setNewPostContent('');
+        setSelectedImage(null);
+        setPreviewUrl(null);
+        fetchPosts(); // Load lại danh sách bài viết
+    } catch (error) {
+        console.error('Error creating post:', error);
+        alert('Đăng bài thất bại, hãy kiểm tra lại dữ liệu!');
+    } finally {
+        setLoading(false);
+    }
+};
 
     const deletePost = async (postId) => {
         try {
@@ -125,88 +154,145 @@ const Feed = () => {
         <div className="feed-container">
             <h2>Feed</h2>
             
-            {/* Create Post Form */}
+            {/* 1. Giao diện Tạo Bài Viết Mới */}
             <div className="create-post">
                 <form onSubmit={createPost}>
                     <textarea
                         value={newPostContent}
                         onChange={(e) => setNewPostContent(e.target.value)}
-                        placeholder="What's on your mind?"
-                        rows="4"
+                        placeholder="Bạn đang nghĩ gì?"
+                        rows="3"
                     />
-                    <button type="submit" disabled={loading}>
-                        {loading ? 'Posting...' : 'Post'}
-                    </button>
+
+                    {/* Hiển thị ảnh xem trước (Preview) nếu người dùng đã chọn ảnh */}
+                    {previewUrl && (
+                        <div className="image-preview-container">
+                            <img src={previewUrl} alt="Preview" className="img-preview" />
+                            <button type="button" className="remove-img-btn" onClick={removeSelectedImage}>
+                                <FaTimes />
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="create-post-actions">
+                        {/* Input file bị ẩn đi để custom giao diện bằng nút bấm */}
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleImageChange} 
+                            ref={fileInputRef}
+                            style={{ display: 'none' }}
+                        />
+                        
+                        {/* Nút kích hoạt chọn ảnh */}
+                        <button 
+                            type="button" 
+                            className="add-image-btn" 
+                            onClick={() => fileInputRef.current.click()}
+                        >
+                            <FaImage /> Thêm ảnh
+                        </button>
+
+                        <button type="submit" className="submit-post-btn" disabled={loading}>
+                            {loading ? 'Đang đăng...' : 'Đăng bài'}
+                        </button>
+                    </div>
                 </form>
             </div>
 
-            {/* Posts List */}
+            {/* 2. Danh sách Bài Viết */}
             <div className="posts-list">
-                {posts.map((post) => (
-                    <div key={post._id} className="post-item" onClick={() => openPostDetail(post._id)}>
-                        <div className="post-header">
-                            <h4>{post.userId?.username || 'Anonymous'}</h4>
-                            <small>{new Date(post.createdAt).toLocaleDateString()}</small>
-                        </div>
-                        {editingPostId === post._id ? (
-                            <div className="edit-post-area" onClick={(e) => e.stopPropagation()}>
-                                <textarea
-                                    className="edit-textarea"
-                                    value={editPostContent}
-                                    onChange={(e) => setEditPostContent(e.target.value)}
-                                    rows={4}
-                                />
-                                <div className="edit-actions">
-                                    <button
-                                        type="button"
-                                        className="save-btn"
-                                        onClick={(e) => saveEditPost(e, post._id)}
-                                        disabled={editLoading}
-                                    >
-                                        {editLoading ? 'Saving...' : 'Save'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="cancel-btn"
-                                        onClick={cancelEditPost}
-                                    >
-                                        Cancel
-                                    </button>
+                {posts.length > 0 ? (
+                    posts.map((post) => (
+                        <div key={post._id} className="post-item" onClick={() => openPostDetail(post._id)}>
+                            <div className="post-header">
+                                <div className="post-user-info">
+                                    <h4>{post.userId?.username || 'Người dùng ẩn danh'}</h4>
+                                    <small>{new Date(post.createdAt).toLocaleDateString()}</small>
                                 </div>
                             </div>
-                        ) : (
-                            <>
-                                <p className="post-content">{post.content}</p>
-                                <div className="post-actions">
-                                    <span className="post-click-hint">Click to view details, comments & reactions</span>
-                                    {post.userId?._id === user?._id && (
-                                        <div className="post-action-buttons">
-                                            <button
-                                                type="button"
-                                                className="edit-btn"
-                                                onClick={(e) => startEditPost(e, post)}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                className="delete-btn"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    deletePost(post._id);
-                                                }}
-                                            >
-                                                Delete
-                                            </button>
+                            
+                            {/* Phần hiển thị nội dung chỉnh sửa nếu đang ở chế độ Edit */}
+                            {editingPostId === post._id ? (
+                                <div className="edit-post-area" onClick={(e) => e.stopPropagation()}>
+                                    <textarea
+                                        className="edit-textarea"
+                                        value={editPostContent}
+                                        onChange={(e) => setEditPostContent(e.target.value)}
+                                        rows={4}
+                                    />
+                                    <div className="edit-actions">
+                                        <button
+                                            type="button"
+                                            className="save-btn"
+                                            onClick={(e) => saveEditPost(e, post._id)}
+                                            disabled={editLoading}
+                                        >
+                                            {editLoading ? 'Đang lưu...' : 'Lưu'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="cancel-btn"
+                                            onClick={cancelEditPost}
+                                        >
+                                            Hủy
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                // Hiển thị nội dung bài viết bình thường
+                                <div className="post-body">
+                                    <p className="post-content">{post.content}</p>
+                                    
+                                    {/* Hiển thị ảnh của bài viết nếu có */}
+                                    {post.image && (
+                                        <div className="post-image-main">
+                                            <img 
+                                                src={`http://localhost:5000${post.image}`} 
+                                                alt="Nội dung bài viết" 
+                                                loading="lazy"
+                                            />
                                         </div>
                                     )}
+
+                                    <div className="post-actions">
+                                        <span className="post-click-hint">Bấm để xem chi tiết, bình luận & cảm xúc</span>
+                                        
+                                        {/* Chỉ hiển thị nút sửa/xóa nếu là chủ bài viết */}
+                                        {post.userId?._id === user?._id && (
+                                            <div className="post-action-buttons">
+                                                <button
+                                                    type="button"
+                                                    className="edit-btn"
+                                                    onClick={(e) => startEditPost(e, post)}
+                                                >
+                                                    Sửa
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="delete-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if(window.confirm("Bạn có chắc muốn xóa bài viết này?")) {
+                                                            deletePost(post._id);
+                                                        }
+                                                    }}
+                                                >
+                                                    Xóa
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </>
-                        )}
-                    </div>
-                ))}
+                            )}
+                        </div>
+                    ))
+                ) : (
+                    <p className="no-posts">Chưa có bài viết nào để hiển thị.</p>
+                )}
             </div>
 
-            {/* Post Detail Modal */}
+            {/* 3. Modal Chi Tiết Bài Viết (Hiện lên khi click vào bài) */}
             {selectedPostId && (
                 <PostDetail postId={selectedPostId} onClose={closePostDetail} />
             )}
