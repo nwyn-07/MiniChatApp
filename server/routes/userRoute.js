@@ -1,11 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../schemas/users');
+const { RegisterValidator, handleResultValidator } = require('../utils/validatorHandler');
+const { registerUser,
+    loginUser,
+    findUser,
+    SuccessLogin,
+    getUsers } = require('../controllers/userController');
 
 // Create a new user
-router.get('/register', (req, res) => {
-    res.send('Register');
-});
-
+router.post('/register',RegisterValidator,handleResultValidator, registerUser);
+router.post('/login', loginUser);
+router.get('/find/:userId', findUser);
+router.get('/', getUsers);
 
 module.exports = router;

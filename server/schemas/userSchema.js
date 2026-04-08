@@ -29,10 +29,10 @@ const userSchema = new mongoose.Schema(
         },
     
 )
-userSchema.pre('save', function () {
+userSchema.pre('save', async function () {
     if (this.isModified("password")) {
-        let salt = bcrypt.genSaltSync(10);
-        this.password = bcrypt.hashSync(this.password, salt);
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
     }
 });
 userSchema.pre('findOneAndUpdate', function () {
