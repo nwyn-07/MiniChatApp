@@ -10,12 +10,12 @@ const {
     deletePost,
     getUserPosts,
 } = require('../controllers/postController');
-router.post('/', checkLogin, uploadImage.single('postImage'), createPost);
+router.post('/', checkLogin, uploadImage.array('images', 10), createPost);
 
 router.get('/', getPosts);
 router.get('/user/:userId', getUserPosts);
 router.get('/:postId', getPostById);
-router.patch('/:postId', checkLogin, updatePost);
+router.patch('/:postId', checkLogin, uploadImage.array('images', 10), updatePost);
 router.delete('/:postId', checkLogin, deletePost);
 
 module.exports = router;

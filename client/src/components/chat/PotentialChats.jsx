@@ -9,24 +9,30 @@ const PotentialChats = () => {
 
 
     return (
-        <>
-        <div className='all-users'>
-            <h5 className='potential-chats-title'>Start New Chat</h5>
-            {potentialChats &&
-                potentialChats.map((u, index) => {
-                    return (
-                        <div className='single-user' key={index} onClick={() => createChat(u._id, user._id)}>
-                        <div className='user-info'>
-                            <img src={u.avatar || '/default-avatar.png'} alt={u.username} className='user-avatar' />
-                            <span className='username'>{u.username}</span>
-                        </div>
-                        <span className='user-online'></span>
-                    </div>
-                    );
-
-                })}
+        <div className="potential-chats-section">
+            <div className='potential-list'>
+                {potentialChats &&
+                    potentialChats.map((u, index) => {
+                        return (
+                            <div 
+                                className='potential-user-avatar' 
+                                key={index} 
+                                onClick={() => createChat(u._id, user._id)}
+                                title={`Chat with ${u.username}`}
+                            >
+                                <div className="avatar-ring">
+                                    <img 
+                                        src={u.avatar || '/default-avatar.png'} 
+                                        alt={u.username} 
+                                        className='avatar-img-circle' 
+                                    />
+                                </div>
+                                <span className='online-dot-mini'></span>
+                            </div>
+                        );
+                    })}
+            </div>
         </div>
-        </>
     );
 }
 

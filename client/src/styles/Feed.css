@@ -176,6 +176,7 @@
 .post-click-hint:hover {
     text-decoration: underline;
 }
+
 /* Giao diện tạo post mới */
 .create-post-actions {
     display: flex;
@@ -188,8 +189,8 @@
 
 .add-image-btn {
     background: #f0f2f5 !important;
-    color: #45bd62 !important;
-    /* Màu xanh lá kiểu Facebook */
+    color: black !important;
+    /* Màu đen theo yêu cầu */
     display: flex;
     align-items: center;
     gap: 8px;

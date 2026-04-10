@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
-//const { checkLogin } = require('../utils/authHandler');
+const { checkLogin } = require('../utils/authHandler');
 const { 
     createMessage,
-    getMessages
+    getMessages,
+    deleteMessage
 } = require('../controllers/messageController');
 
-router.post('/', createMessage);
-router.get('/:chatId', getMessages);
+router.post('/', checkLogin, createMessage);
+router.get('/:chatId', checkLogin, getMessages);
+router.delete('/:messageId', checkLogin, deleteMessage);
 
 module.exports = router;

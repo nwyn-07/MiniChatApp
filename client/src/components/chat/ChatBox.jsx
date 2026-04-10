@@ -1,13 +1,22 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
-import { Container, Stack, Form, Button } from 'react-bootstrap';
 import io from 'socket.io-client';
 import '../../styles/ChatBox.css';
 
 const ChatBox = () => {
-    const { currentChat, messages, isMessagesLoading, sendTextMessage, addIncomingMessage } = useContext(ChatContext);
+    const {
+        currentChat,
+        messages,
+        isMessagesLoading,
+        sendTextMessage,
+        addIncomingMessage,
+        deleteMessage,
+        handleMessageDeleted
+    } = useContext(ChatContext);
+
     const { user } = useContext(AuthContext);
+
     const [textMessage, setTextMessage] = useState('');
     const [socket, setSocket] = useState(null);
     const messagesEndRef = useRef(null);
@@ -20,22 +29,30 @@ const ChatBox = () => {
         scrollToBottom();
     }, [messages]);
 
+    // CONNECT SOCKET
     useEffect(() => {
-        const newSocket = io('http://localhost:5000');
+        const token = localStorage.getItem('token');
+
+        const newSocket = io('http://localhost:5000', {
+            auth: { token }
+        });
+
         setSocket(newSocket);
 
-        newSocket.emit('userJoin', user?._id);
-
         newSocket.on('receiveMessage', (data) => {
-            console.log('Received message:', data);
             addIncomingMessage(data.chatId, data.message);
+        });
+
+        newSocket.on('messageDeleted', (data) => {
+            handleMessageDeleted(data.messageId);
         });
 
         return () => {
             newSocket.disconnect();
         };
-    }, [user, addIncomingMessage]);
+    }, [user, addIncomingMessage, handleMessageDeleted]);
 
+    // JOIN CHAT ROOM
     useEffect(() => {
         if (!socket) return;
 
@@ -50,96 +67,136 @@ const ChatBox = () => {
         };
     }, [socket, currentChat]);
 
-    if (!currentChat) {
-        return (
-            <Container className="chat-box-container">
-                <div className="no-chat-selected">
-                    <i className="fas fa-comments"></i>
-                    <h4>Select a chat to start messaging</h4>
-                    <p>Choose a conversation from the list to begin chatting</p>
-                </div>
-            </Container>
-        );
-    }
-
+    // SEND MESSAGE
     const handleSendMessage = async (e) => {
         e.preventDefault();
+
         if (textMessage.trim() && socket) {
-            const newMessage = await sendTextMessage(textMessage, user, currentChat._id);
+            const newMessage = await sendTextMessage(
+                textMessage,
+                user,
+                currentChat._id
+            );
+
             if (newMessage) {
                 socket.emit('sendMessage', {
                     chatId: currentChat._id,
                     message: newMessage,
                 });
             }
+
             setTextMessage('');
         }
     };
 
-    return (
-        <Container className="chat-box-container">
-            <div className="chat-header">
-                <div className="chat-info">
-                    <h5>{currentChat?.name || 'Chat'}</h5>
-                    <span className="online-status">
-                        <i className="fas fa-circle"></i> Online
-                    </span>
+    // RECALL MESSAGE
+    const handleRecallMessage = async (messageId) => {
+        if (!window.confirm("Bạn có chắc muốn thu hồi?")) return;
+
+        const response = await deleteMessage(messageId);
+
+        if (response && !response.error) {
+            socket.emit('deleteMessage', {
+                chatId: currentChat._id,
+                messageId
+            });
+        }
+    };
+
+    // NO CHAT SELECTED
+    if (!currentChat) {
+        return (
+            <div className="chat-box-flex-column">
+                <div className="no-chat-selected">
+                    <h4>Select a chat to start messaging</h4>
                 </div>
             </div>
+        );
+    }
 
-            <div className="messages-container">
+    return (
+        <div className="chat-box-flex-column">
+
+            {/* HEADER */}
+            <div className="chat-header-modern">
+                <h5>{currentChat?.name || 'Conversation'}</h5>
+            </div>
+
+            {/* MESSAGES */}
+            <div className="messages-scroller-container">
                 {isMessagesLoading ? (
-                    <div className="loading-messages">
-                        <i className="fas fa-spinner fa-spin"></i>
-                        Loading messages...
-                    </div>
+                    <p>Loading...</p>
                 ) : (
-                    <Stack gap={3} className="messages-stack">
+                    <div className="messages-inner-stack">
                         {messages?.map((message, index) => (
                             <div
                                 key={index}
-                                className={`message ${
-                                    message.senderId === user._id ? 'own-message' : 'other-message'
-                                }`}
+                                className={`message-bubble-wrapper ${message.senderId === user._id
+                                    ? 'self-end'
+                                    : 'self-start'
+                                    }`}
                             >
-                                <div className="message-content">
+                                <div
+                                    className={`message-blob ${message.senderId === user._id
+                                        ? 'blob-own'
+                                        : 'blob-other'
+                                        } ${message.isDeleted ? 'message-is-deleted' : ''
+                                        }`}
+                                >
+
+                                    {/* NÚT THU HỒI */}
+                                    {String(message.senderId) === String(user?._id) && !message.isDeleted && (
+                                        <button
+                                            className="recall-btn-modern"
+                                            onClick={() => handleRecallMessage(message._id)}
+                                            title="Thu hồi"
+                                        >
+                                            <i className="fas fa-undo"></i>
+                                        </button>
+                                    )}
+
+                                    {/* TEXT */}
                                     <p>{message.text}</p>
-                                    <span className="message-time">
-                                        {new Date(message.createdAt).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </span>
+
+                                    {/* TIME */}
+                                    <div className="blob-footer">
+                                        <span>
+                                            {new Date(message.createdAt).toLocaleTimeString([], {
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </span>
+                                    </div>
+
                                 </div>
                             </div>
                         ))}
                         <div ref={messagesEndRef} />
-                    </Stack>
+                    </div>
                 )}
             </div>
 
-            <div className="message-input-container">
-                <Form onSubmit={handleSendMessage} className="message-form">
-                    <Form.Group className="message-input-group">
-                        <Form.Control
-                            type="text"
-                            placeholder="Type a message..."
-                            value={textMessage}
-                            onChange={(e) => setTextMessage(e.target.value)}
-                            className="message-input"
-                        />
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            className="send-button"
-                            disabled={!textMessage.trim()}
-                        >
-                            <i className="fas fa-paper-plane"></i>
-                        </Button>
-                    </Form.Group>
-                </Form>
+            {/* INPUT */}
+            <div className="input-bar-container">
+                <form onSubmit={handleSendMessage} className="input-form-flex">
+                    <input
+                        type="text"
+                        placeholder="Type a message..."
+                        value={textMessage}
+                        onChange={(e) => setTextMessage(e.target.value)}
+                        className="modern-chat-input"
+                    />
+                    <button
+                        type="submit"
+                        className="modern-send-btn"
+                        disabled={!textMessage.trim()}
+                    >
+                        ➤
+                    </button>
+                </form>
             </div>
-        </Container>
+
+        </div>
     );
 };
 

@@ -23,13 +23,16 @@ const io = socketIo(server, {
   },
 });
 
-require('dotenv').config()
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+console.log('ATLAS_URI loaded:', process.env.ATLAS_URI ? '✓ YES' : '✗ NO');
 console.log('JWT_SECRET_KEY loaded:', process.env.JWT_SECRET_KEY ? '✓ YES' : '✗ NO');
-
 app.use(cors())
 app.use(cookieParser())
 app.use(express.json())
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Mount existing routes
 app.use('/api/users', userRoute);
@@ -48,15 +51,15 @@ app.get('/', (req, res, )=> {
   res.send('Hello World!');
 });
 
+// Khởi động Server & Socket sớm để App hoạt động
 server.listen(port, () => {
-    console.log(`Server is running on port ${port}`)
+    console.log(`Server is running on port ${port}`);
 });
-
-// Setup Socket.io
 setupSocket(io);
 
+// Kết nối DB ngầm
 mongoose.connect(uri).then(() => {
-    console.log('MongoDB connected successfully')
+    console.log('MongoDB connected successfully');
 }).catch((err) => {
-    console.log('MongoDB connection error: ', err)
+    console.log('CRITICAL: MongoDB connection error: ', err);
 });

@@ -11,11 +11,13 @@ const postSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        images: [
-            {
-                type: String,
-            }
-        ],
+        images: [{
+            type: String
+        }],
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

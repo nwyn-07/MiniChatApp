@@ -41,7 +41,7 @@ const loginUser = async (req, res) => {
 
     try{
         let user = await userSchema.findOne({ email });
-        if (!user) {
+        if (!user || user.isDeleted) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
         const isValidPassword = await bcrypt.compare(password, user.password);
@@ -65,6 +65,9 @@ const findUser = async (req, res) => {
     const userId = req.params.userId;
     try {
         const user = await userSchema.findById(userId);
+        if (!user || user.isDeleted) {
+             return res.status(404).json({ message: 'User not found' });
+        }
         res.status(200).json(user);
 
     }catch(error) {
@@ -75,11 +78,27 @@ const findUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
     try {
-        const user = await userSchema.find();
+        const user = await userSchema.find({ isDeleted: { $ne: true } });
         res.status(200).json(user);
 
     }catch(error) {
         console.log(error)
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+const getUserFriends = async (req, res) => {
+    const userId = req.params.userId;
+    try {
+        const user = await userSchema.findById(userId).populate('friends', 'username email avatar isDeleted');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // Lọc những người bạn chưa bị xóa mềm
+        const activeFriends = user.friends.filter(friend => !friend.isDeleted);
+        res.status(200).json(activeFriends);
+    } catch(error) {
+        console.log(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 }
@@ -89,5 +108,6 @@ module.exports = {
     loginUser,
     findUser,
     SuccessLogin,
-    getUsers
+    getUsers,
+    getUserFriends
 };

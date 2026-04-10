@@ -54,3 +54,24 @@ export const getRequest = async (URL) => {
     return data;
 }
 
+export const deleteRequest = async (URL) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(URL, {
+        method: "DELETE",
+        headers: {
+            ...(token && { "Authorization": `Bearer ${token}` }),
+        }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        let message = "An error occurred";
+        if (data?.message) {
+            message = data.message;
+        }
+        return { error: true, message };
+    }
+    return data;
+};
+

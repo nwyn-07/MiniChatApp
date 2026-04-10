@@ -23,6 +23,14 @@ const userSchema = new mongoose.Schema(
             minlength: 3,
             maxlength: 1024,
         },
+        friends: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'user'
+        }],
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
     },
         {
             timestamps: true

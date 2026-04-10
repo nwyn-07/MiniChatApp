@@ -133,24 +133,93 @@ const PostDetail = ({ postId, onClose }) => {
     return (
         <div className="post-detail-overlay" onClick={onClose}>
             <div className="post-detail-container" onClick={e => e.stopPropagation()}>
-                <button className="close-modal-btn" onClick={onClose}><FaTimes /></button>
-
+                
                 <div className="modal-body">
-                    <div className="post-main-content">
-                        <div className="post-header">
+                    {/* KHỐI TRÁI: Dành riêng cho trải nghiệm ngắm HÌNH ẢNH */}
+                    <div className="post-main-content-media">
+                        {(post.images && post.images.length > 0) ? (
+                            <>
+                                <div className="post-detail-images-carousel">
+                                    {post.images.map((img, idx) => (
+                                        <div key={idx} className="post-detail-image-slide">
+                                            <img 
+                                                src={`http://localhost:5000${img}`} 
+                                                alt={`Post detail ${idx}`} 
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                                {post.images.length > 1 && (
+                                    <div className="carousel-indicators">
+                                        {post.images.map((_, idx) => (
+                                            <span key={idx} className="indicator-dot"></span>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="no-media-content">
+                                <p className="post-text-large">{post.content}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* KHỐI PHẢI: Dành cho Thông tin, Bình luận và Tương tác */}
+                    <div className="post-comments-side">
+                        <button className="close-modal-btn" onClick={onClose}><FaTimes /></button>
+
+                        <div className="post-header-right">
                             <div className="user-avatar-placeholder">
                                 {post.userId?.username?.charAt(0).toUpperCase() || '?'}
                             </div>
-                            <div>
+                            <div className="header-info">
                                 <h4>{post.userId?.username || 'Unknown User'}</h4>
                                 <span className="post-time">
                                     <FaRegClock /> {new Date(post.createdAt).toLocaleString()}
                                 </span>
                             </div>
                         </div>
-                        
-                        <div className="post-text">
-                            <p>{post.content}</p>
+
+                        <div className="comments-scroller">
+                            {/* Hiển thị Nội dung bài viết như một comment gốc nếu có ảnh */}
+                            {(post.images && post.images.length > 0 && post.content) && (
+                                <div className="post-description">
+                                    <div className="user-avatar-placeholder small-avatar">
+                                        {post.userId?.username?.charAt(0).toUpperCase() || '?'}
+                                    </div>
+                                    <div className="desc-content">
+                                        <strong>{post.userId?.username}</strong> {post.content}
+                                    </div>
+                                </div>
+                            )}
+
+                            {comments.length > 0 ? (
+                                comments.map((comment) => (
+                                    <div key={comment._id} className="comment-bubble">
+                                        <div className="user-avatar-placeholder small-avatar">
+                                            {comment.userId?.username?.charAt(0).toUpperCase() || '?'}
+                                        </div>
+                                        <div className="comment-body">
+                                            <p><strong>{comment.userId?.username}</strong> {comment.text}</p>
+                                            <div className="comment-info">
+                                                <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                                {(comment.userId?._id === user?._id || post?.userId?._id === user?._id) && (
+                                                    <button 
+                                                        className="delete-comment" 
+                                                        title="Delete comment"
+                                                        onClick={() => handleDeleteComment(comment._id)}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="no-comments" style={{textAlign: 'center', color: '#8e8e8e', marginTop: '50px'}}>Chưa có bình luận nào.</p>
+                            )}
                         </div>
 
                         <div className="instagram-action-bar">
@@ -161,40 +230,12 @@ const PostDetail = ({ postId, onClose }) => {
                                 >
                                     {isLiked ? <FaHeart /> : <FaRegHeart />}
                                 </button>
-                                <span className="like-counter">{likeCount} likes</span>
+                                <button className="like-btn" style={{cursor: 'default'}}>
+                                    <FaRegComment />
+                                </button>
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="post-comments-side">
-                        <div className="comments-header">
-                            <FaRegComment /> <span>Comments ({comments.length})</span>
-                        </div>
-
-                        <div className="comments-scroller">
-                            {comments.length > 0 ? (
-                                comments.map((comment) => (
-                                    <div key={comment._id} className="comment-bubble">
-                                        <div className="comment-info">
-                                            <strong>{comment.userId?.username}</strong>
-                                            <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
-                                        </div>
-                                        <p>{comment.text}</p>
-                                        {/* Kiểm tra: Nếu là chủ CMT (comment.userId) HOẶC chủ POST (post.userId) */}
-                                            {(comment.userId?._id === user?._id || post?.userId?._id === user?._id) && (
-                                            <button 
-                                            className="delete-comment" 
-                                            title="Delete"
-                                            onClick={() => handleDeleteComment(comment._id)}
-                                            >
-                                            <FaTrashAlt />
-                                            </button>
-                                            )}
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="no-comments">No comments yet.</p>
-                            )}
+                            <span className="like-counter">{likeCount} likes</span>
+                            <span className="post-time" style={{fontSize: '10px', marginTop: '-5px'}}>{new Date(post.createdAt).toLocaleDateString()}</span>
                         </div>
 
                         <form className="comment-input-area" onSubmit={handleAddComment}>
@@ -202,10 +243,10 @@ const PostDetail = ({ postId, onClose }) => {
                                 type="text"
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
-                                placeholder="Write a comment..."
+                                placeholder="Thêm bình luận..."
                             />
                             <button type="submit" disabled={actionLoading || !newComment.trim()}>
-                                {actionLoading ? '...' : 'Post'}
+                                {actionLoading ? '...' : 'Đăng'}
                             </button>
                         </form>
                     </div>

@@ -88,6 +88,10 @@ const acceptFriendRequest = async (req, res) => {
         friendRequest.status = 'accepted';
         const response = await friendRequest.save();
 
+        // Add to Set to prevent duplicates
+        await User.findByIdAndUpdate(friendRequest.senderId, { $addToSet: { friends: userId } });
+        await User.findByIdAndUpdate(userId, { $addToSet: { friends: friendRequest.senderId } });
+
         await createNotification(
             friendRequest.senderId,
             'friendRequest',

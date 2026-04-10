@@ -11,19 +11,16 @@ const createPost = async (req, res) => {
             return res.status(400).json({ message: 'Content is required' });
         }
 
-        let imageUrl = null;
-        // Kiểm tra nếu có file được gửi lên từ Multer (req.file)
-        if (req.file) {
-            // Đường dẫn này sẽ khớp với cấu hình express.static trong server.js của bạn
-            imageUrl = `/uploads/posts/${req.file.filename}`;
+        let imageUrls = [];
+        // Kiểm tra nếu có mảng file được gửi lên từ Multer (req.files)
+        if (req.files && req.files.length > 0) {
+            imageUrls = req.files.map(file => `/uploads/${file.filename}`);
         }
 
         const newPost = new Post({
             userId,
             content,
-            // Nếu có ảnh thì lưu imageUrl, nếu không thì để null hoặc mảng trống tùy Schema của bạn
-            // Ở đây mình giả định bạn lưu 1 ảnh duy nhất cho đơn giản
-            image: imageUrl, 
+            images: imageUrls, 
         });
 
         const savedPost = await newPost.save();
@@ -82,7 +79,7 @@ const createPostWithTransaction = async (req, res) => {
 
 const getPosts = async (req, res) => {
     try {
-        const posts = await Post.find().populate('userId', 'username email').sort({ createdAt: -1 });
+        const posts = await Post.find({ isDeleted: { $ne: true } }).populate('userId', 'username email').sort({ createdAt: -1 });
         res.status(200).json(posts);
     } catch (error) {
         console.log(error);
@@ -95,7 +92,7 @@ const getPostById = async (req, res) => {
 
     try {
         const post = await Post.findById(postId).populate('userId', 'username email');
-        if (!post) {
+        if (!post || post.isDeleted) {
             return res.status(404).json({ message: 'Post not found' });
         }
         res.status(200).json(post);
@@ -108,7 +105,7 @@ const getPostById = async (req, res) => {
 const updatePost = async (req, res) => {
     const userId = req.user._id;
     const { postId } = req.params;
-    const { content, images } = req.body;
+    const { content, existingImages } = req.body; // existingImages: mảng URL ảnh cũ muốn giữ lại
 
     try {
         const post = await Post.findById(postId);
@@ -121,10 +118,28 @@ const updatePost = async (req, res) => {
         }
 
         if (content) post.content = content;
-        if (images) post.images = images;
 
-        const response = await post.save();
-        res.status(200).json(response);
+        // Xử lý hình ảnh
+        let updatedImages = [];
+        
+        // 1. Giữ lại các ảnh cũ được gửi từ Frontend (nếu có)
+        if (existingImages) {
+            // Nếu chỉ gửi 1 string thay vì array (do Multer/FormData), chuyển thành array
+            updatedImages = Array.isArray(existingImages) ? existingImages : [existingImages];
+        }
+
+        // 2. Thêm các ảnh mới vừa upload (nếu có)
+        if (req.files && req.files.length > 0) {
+            const newImageUrls = req.files.map(file => `/uploads/${file.filename}`);
+            updatedImages = [...updatedImages, ...newImageUrls];
+        }
+
+        // Cập nhật mảng images
+        post.images = updatedImages;
+
+        const savedPost = await post.save();
+        const populatedPost = await savedPost.populate('userId', 'username email');
+        res.status(200).json(populatedPost);
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Internal server error' });
@@ -145,7 +160,8 @@ const deletePost = async (req, res) => {
             return res.status(403).json({ message: 'You can only delete your own posts' });
         }
 
-        await Post.findByIdAndDelete(postId);
+        post.isDeleted = true;
+        await post.save();
         res.status(200).json({ message: 'Post deleted successfully' });
     } catch (error) {
         console.log(error);
@@ -157,7 +173,7 @@ const getUserPosts = async (req, res) => {
     const { userId } = req.params;
 
     try {
-        const posts = await Post.find({ userId }).populate('userId', 'username email').sort({ createdAt: -1 });
+        const posts = await Post.find({ userId, isDeleted: { $ne: true } }).populate('userId', 'username email').sort({ createdAt: -1 });
         res.status(200).json(posts);
     } catch (error) {
         console.log(error);

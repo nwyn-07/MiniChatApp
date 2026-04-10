@@ -7,8 +7,8 @@ const {
     findUserChats 
 } = require('../controllers/chatController');
 
-router.post('/', createChat);
-router.get('/:userId', findUserChats);
-router.get('/find/:userId/:secondId', findChat);
+router.post('/', checkLogin, createChat);
+router.get('/', checkLogin, findUserChats);
+router.get('/find/:secondId', checkLogin, findChat);
 
 module.exports = router;

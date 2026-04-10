@@ -2,19 +2,19 @@
 const chatSchema = require("../schemas/chatSchema");
 
 const createChat = async (req, res) => {
-    const { firstId } = req.body;
+    const firstId = req.user._id;
     const { secondId } = req.body;
 
 
     try{
         const chat = await chatSchema.findOne({
-            members: { $all: [firstId, secondId] },
+            members: { $all: [firstId.toString(), secondId.toString()] },
         });
 
         if(chat) return res.status(200).json(chat);
 
         const newChat = new chatSchema({
-            members: [firstId, secondId],
+            members: [firstId.toString(), secondId.toString()],
         });
         const response = await newChat.save();
         res.status(200).json(response);
@@ -27,7 +27,7 @@ const createChat = async (req, res) => {
 };
 
 const findUserChats = async (req, res) => {
-    const userId = req.params.userId;
+    const userId = req.user._id.toString();
     try {
         const chats = await chatSchema.find({
             members: { $in: [userId] },
@@ -42,7 +42,8 @@ const findUserChats = async (req, res) => {
 }
 
 const findChat = async (req, res) => {
-    const {firstId, secondId} = req.params;
+    const firstId = req.user._id.toString();
+    const { secondId } = req.params;
     
     try {
         const chat = await chatSchema.find({

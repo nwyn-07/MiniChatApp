@@ -34,7 +34,7 @@ const getCommentsByPost = async (req, res) => {
     const { postId } = req.params;
 
     try {
-        const comments = await Comment.find({ postId }).populate('userId', 'username email').sort({ createdAt: -1 });
+        const comments = await Comment.find({ postId, isDeleted: { $ne: true } }).populate('userId', 'username email').sort({ createdAt: -1 });
         res.status(200).json(comments);
     } catch (error) {
         console.log(error);
@@ -89,8 +89,9 @@ const deleteComment = async (req, res) => {
             return res.status(403).json({ message: 'You do not have permission to delete this comment' });
         }
 
-        // 3. Thực hiện xóa
-        await Comment.findByIdAndDelete(commentId);
+        // 3. Thực hiện xóa mềm
+        comment.isDeleted = true;
+        await comment.save();
         res.status(200).json({ message: 'Comment deleted successfully' });
     } catch (error) {
         console.log(error);

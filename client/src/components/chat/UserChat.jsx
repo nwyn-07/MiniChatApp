@@ -7,22 +7,22 @@ const UserChat = ({ chat, user }) => {
     const {recipientUser} = useFetchRecipientUser(chat, user);
 
     return (
-    <Stack direction='horizontal' gap={3} className="user-card align-items-center p-2 justify-content-between" role="button">
-        <div className='d-flex'>
-            <div className='me-2'>
-                <img src={avatar} height="40px" width="40px" style={{borderRadius: '50%'}} />
+        <div className="sidebar-chat-card">
+            <div className='card-main-info'>
+                <div className='avatar-wrapper'>
+                    <img src={recipientUser?.avatar || avatar} alt="avatar" className="chat-avatar" />
+                    <span className={`status-indicator ${recipientUser ? 'online' : 'offline'}`}></span>
+                </div>
+                <div className='chat-meta'>
+                    <div className='chat-name'>{recipientUser ? recipientUser.username : 'Unknown User'}</div>
+                    <div className='last-msg-preview'>Click to start chatting...</div>
+                </div>
             </div>
-            <div className='text-content'>
-                <div className='name'>{recipientUser ? <div className="username">{recipientUser.username}</div> : 'Unknown User'}</div>
-                <div className='text'>Click to start chatting...</div>
+            <div className="card-right-info">
+                <div className="chat-date">Now</div>
+                {/* <div className="notification-badge">2</div> */}
             </div>
         </div>
-        <div className="d-flex flex-column align-items-end">
-            <div className="date">Now</div>
-            <div className="this-user-notification">0</div>
-            <span className='user-online'></span>
-        </div>
-    </Stack>
     );
 };
 
